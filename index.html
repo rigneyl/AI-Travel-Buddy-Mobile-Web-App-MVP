@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <style>
+    :root {
+      --bg-main: #030608;
+      --bg-elevated: #0d1117;
+      --bg-card: #141a22;
+      --accent: #c8ff3d;
+      --accent-soft: rgba(200, 255, 61, 0.1);
+      --accent-soft-2: rgba(200, 255, 61, 0.25);
+      --text-main: #f5f7ff;
+      --text-muted: #a5b1c4;
+      --danger: #ff4f6e;
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --radius-lg: 22px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.55);
+      --nav-height: 74px;
+      --header-height: 72px;
+      --max-app-width: 430px;
+      --transition-fast: 0.25s ease-out;
+      --blur-bg: blur(22px);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Roboto", sans-serif;
+      color: var(--text-main);
+      background: radial-gradient(circle at top, #1b1b27 0, #020308 45%, #000 100%);
+    }
+
+    body {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    /* App Shell */
+
+    .app-shell {
+      position: relative;
+      width: 100%;
+      max-width: var(--max-app-width);
+      height: 100vh;
+      max-height: 900px;
+      margin: 0 auto;
+      background: radial-gradient(circle at top, #31313b 0, #05070b 40%, #020308 100%);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+    }
+
+    /* On desktop, center and add nice radius */
+
+    @media (min-width: 640px) {
+      body {
+        padding: 18px;
+        align-items: center;
+      }
+      .app-shell {
+        border-radius: 30px;
+        overflow: hidden;
+      }
+    }
+
+    @media (max-width: 639px) {
+      body {
+        padding: 0;
+      }
+      .app-shell {
+        border-radius: 0;
+      }
+    }
+
+    /* Header */
+
+    .app-header {
+      flex: 0 0 var(--header-height);
+      padding: 14px 18px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: var(--blur-bg);
+      background: linear-gradient(to bottom, rgba(4, 7, 10, 0.95), rgba(4, 7, 10, 0.85));
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 10;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background-image: linear-gradient(135deg, #facc15, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45);
+    }
+
+    .header-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-eyebrow {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      cursor: pointer;
+      background: rgba(17, 24, 39, 0.9);
+      transition: background var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .icon-btn.primary {
+      background: var(--accent);
+      color: #060606;
+      border-color: transparent;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.75), 0 0 35px rgba(200, 255, 61, 0.45);
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Content area */
+
+    .app-content {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 10px 18px 16px;
+      position: relative;
+      scroll-behavior: smooth;
+    }
+
+    .screen {
+      display: none;
+      min-height: calc(100% - 6px);
+      padding-bottom: 12px;
+    }
+
+    .screen.active {
+      display: block;
+      animation: fadeInUp 0.25s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Home Screen */
+
+    .home-greeting {
+      margin-top: 2px;
+      margin-bottom: 14px;
+    }
+
+    .home-greeting-eyebrow {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .home-greeting-title {
+      font-size: 22px;
+      line-height: 1.2;
+      font-weight: 600;
+    }
+
+    .accent-highlight {
+      color: var(--accent);
+    }
+
+    .chip-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .chip {
+      flex: 1 1 0;
+      padding: 10px 12px;
+      border-radius: var(--radius-pill);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
+    }
+
+    .chip-primary {
+      background: linear-gradient(135deg, var(--accent), #fafa9a);
+      color: #050708;
+      border-color: transparent;
+      box-shadow: 0 0 0 1px rgba(8, 8, 8, 0.7), 0 0 45px rgba(200, 255, 61, 0.5);
+    }
+
+    .chip-secondary {
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-main);
+    }
+
+    .chip span.icon {
+      font-size: 14px;
+    }
+
+    .chip:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+    }
+
+    .section-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .section-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .section-link {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      opacity: 0.9;
+    }
+
+    .section-link:hover {
+      opacity: 1;
+      color: var(--accent);
+    }
+
+    .trip-card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .trip-card {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #111827;
+      min-height: 122px;
+      display: flex;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .trip-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+    }
+
+    .trip-card-image {
+      flex: 0 0 48%;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .trip-card-body {
+      flex: 1 1 auto;
+      padding: 14px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: linear-gradient(160deg, rgba(12, 17, 26, 0.96), rgba(4, 7, 12, 0.98));
+    }
+
+    .trip-card-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--accent);
+    }
+
+    .trip-card-name {
+      margin-top: 8px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .trip-card-meta {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .trip-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .trip-card-distance {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .trip-card-distance strong {
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .trip-card-cta {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #020617;
+      font-size: 16px;
+      box-shadow: 0 10px 25px rgba(200, 255, 61, 0.4);
+    }
+
+    /* Planner Screen */
+
+    .planner-hero {
+      margin-top: 6px;
+      margin-bottom: 16px;
+      padding: 16px 14px 18px;
+      border-radius: 20px;
+      background: radial-gradient(circle at top, rgba(200, 255, 61, 0.21), rgba(0, 0, 0, 0.98));
+      border: 1px solid rgba(200, 255, 61, 0.3);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.75);
+    }
+
+    .planner-hero-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .planner-hero-body {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .planner-ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(12, 20, 40, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .prompt-card {
+      margin-top: 4px;
+      border-radius: 18px;
+      background: rgba(9, 13, 19, 0.98);
+      border: 1px solid var(--border-subtle);
+      padding: 14px 12px 12px;
+      box-shadow: 0 16px 35px rgba(0, 0, 0, 0.7);
+    }
+
+    .prompt-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .prompt-input {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      background: rgba(15, 23, 42, 0.9);
+      padding: 10px 10px;
+      font-size: 13px;
+      color: var(--text-main);
+      resize: none;
+      min-height: 74px;
+      outline: none;
+      line-height: 1.4;
+    }
+
+    .prompt-input::placeholder {
+      color: rgba(148, 163, 184, 0.7);
+    }
+
+    .prompt-hints {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .hint-chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .generate-btn {
+      width: 100%;
+      margin-top: 12px;
+      border-radius: var(--radius-pill);
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent), #f7fbb0);
+      border: none;
+      cursor: pointer;
+      color: #020617;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 14px 35px rgba(190, 242, 100, 0.5);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .generate-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 45px rgba(190, 242, 100, 0.6);
+    }
+
+    .generate-btn span.icon {
+      font-size: 17px;
+    }
+
+    .ai-results-list {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ai-result-card {
+      border-radius: 16px;
+      padding: 12px 12px 10px;
+      background: linear-gradient(140deg, rgba(15, 23, 42, 0.98), rgba(5, 8, 15, 0.98));
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+    }
+
+    .ai-result-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: rgba(200, 255, 61, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .ai-result-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .ai-result-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .ai-result-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 3px;
+    }
+
+    .ai-result-tag {
+      border-radius: 999px;
+      padding: 3px 7px;
+      font-size: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: var(--text-muted);
+    }
+
+    /* Live Trip Screen */
+
+    .live-trip-hero {
+      margin: 4px -10px 14px;
+      border-radius: 22px;
+      overflow: hidden;
+      position: relative;
+      background-image: url("https://images.pexels.com/photos/442781/pexels-photo-442781.jpeg?auto=compress&cs=tinysrgb&w=1200");
+      background-size: cover;
+      background-position: center;
+      min-height: 220px;
+      box-shadow: 0 22px 45px rgba(0, 0, 0, 0.85);
+    }
+
+    .live-trip-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(9, 9, 11, 0.05), rgba(5, 6, 11, 0.92));
+    }
+
+    .live-trip-top {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pill-label {
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .pill-label strong {
+      color: var(--accent);
+    }
+
+    .live-trip-gauge {
+      position: absolute;
+      top: 64px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .gauge-dial {
+      width: 86px;
+      height: 86px;
+      border-radius: 999px;
+      border: 4px solid rgba(15, 23, 42, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, rgba(200, 255, 61, 0.65), rgba(21, 24, 29, 0.98));
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+      position: relative;
+    }
+
+    .gauge-dial::after {
+      content: "";
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: radial-gradient(circle at top, #020617, #020617 35%, #111827 100%);
+      border: 3px solid rgba(15, 23, 42, 0.85);
+    }
+
+    .gauge-dot {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #f9fafb;
+      box-shadow: 0 0 18px rgba(254, 252, 232, 0.95);
+      transform-origin: center 30px;
+      transform: rotate(130deg) translateY(-32px);
+    }
+
+    .gauge-metrics {
+      font-size: 12px;
+      text-align: right;
+      color: #e5e7eb;
+    }
+
+    .gauge-metrics .value {
+      display: block;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .live-trip-path {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 5px;
+    }
+
+    .path-marker {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px 999px 999px 999px;
+      background: var(--accent);
+      box-shadow: 0 0 22px rgba(190, 242, 100, 0.7);
+      opacity: 0.8;
+    }
+
+    .path-marker:nth-child(2) {
+      transform: translateY(-8px);
+      opacity: 0.9;
+    }
+
+    .path-marker:nth-child(3) {
+      transform: translateY(-16px);
+      opacity: 1;
+    }
+
+    .path-marker:nth-child(4) {
+      transform: translateY(-8px);
+    }
+
+    .path-marker:nth-child(5) {
+      transform: translateY(0);
+      opacity: 0.7;
+    }
+
+    .live-trip-details {
+      margin-top: 4px;
+      padding: 10px 4px 2px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .detail-main {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .detail-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .safety-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: rgba(22, 163, 74, 0.12);
+      color: #bbf7d0;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .timeline {
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(51, 65, 85, 0.9);
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 11px;
+      border-bottom: 1px dashed rgba(55, 65, 81, 0.7);
+    }
+
+    .timeline-item:last-child {
+      border-bottom: none;
+      padding-bottom: 2px;
+    }
+
+    .timeline-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      border: 2px solid rgba(148, 163, 184, 0.9);
+      background: rgba(15, 23, 42, 1);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .timeline-item strong {
+      color: var(--accent);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    /* Bottom Nav */
+
+    .app-nav {
+      flex: 0 0 var(--nav-height);
+      padding: 10px 18px 16px;
+      backdrop-filter: blur(20px);
+      background: linear-gradient(to top, rgba(3, 7, 18, 0.98), rgba(3, 7, 18, 0.96));
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .nav-inner {
+      height: 100%;
+      border-radius: var(--radius-pill);
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      gap: 4px;
+    }
+
+    .nav-item {
+      flex: 1 1 0;
+      border-radius: 999px;
+      padding: 6px 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .nav-item-icon {
+      font-size: 16px;
+    }
+
+    .nav-item.active {
+      background: radial-gradient(circle at top, rgba(200, 255, 61, 0.26), rgba(15, 23, 42, 0.98));
+      color: #f9fafb;
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.75);
+    }
+
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(200, 255, 61, 0.5);
+    }
+
+    .nav-item-label {
+      display: none;
+    }
+
+    @media (min-width: 380px) {
+      .nav-item-label {
+        display: inline;
+      }
+    }
+
+    /* Light subtle scrollbar */
+
+    .app-content::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .app-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .app-content::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.55);
+      border-radius: 999px;
+    }
+
+    /* Simple toast */
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: calc(var(--nav-height) + 18px);
+      transform: translateX(-50%);
+      padding: 8px 12px;
+      background: rgba(15, 23, 42, 0.98);
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+      z-index: 20;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translate(-50%, -6px);
+    }
+
+    .toast-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(190, 242, 100, 0.8);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Toast -->
+    <div class="toast" id="toast">
+      <span class="toast-dot"></span>
+      <span id="toastText">Trip added to your plans</span>
+    </div>
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="avatar">M</div>
+        <div class="header-text">
+          <span class="header-eyebrow" id="headerEyebrow">Hi, Max</span>
+          <span class="header-title" id="headerTitle">Smart Journeys</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="notifBtn" title="Alerts">
+          🔔
+        </button>
+        <button class="icon-btn primary" id="quickAIButton" title="Ask AI">
+          ⚡
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="app-content">
+      <!-- Home Screen -->
+      <section class="screen active" id="screen-home">
+        <div class="home-greeting">
+          <div class="home-greeting-eyebrow">Let’s find a trip</div>
+          <div class="home-greeting-title">
+            that matches your <span class="accent-highlight">vibe</span>.
+          </div>
+        </div>
+
+        <div class="chip-row">
+          <button class="chip chip-primary" id="chipAskAI">
+            <span class="icon">⚡</span> Ask AI
+          </button>
+          <button class="chip chip-secondary" id="chipExplore">
+            <span class="icon">🧭</span> Explore
+          </button>
+        </div>
+
+        <div class="section-label-row">
+          <span class="section-label">AI Trip Recommender</span>
+          <span class="section-link" id="seeAllTrips">See all →</span>
+        </div>
+
+        <div class="trip-card-list" id="tripCards">
+          <article class="trip-card" data-trip="Sea chill weekend">
+            <div
+              class="trip-card-image"
+              style="background-image:url('https://images.pexels.com/photos/457882/pexels-photo-457882.jpeg?auto=compress&cs=tinysrgb&w=1200');"
+            ></div>
+            <div class="trip-card-body">
+              <div>
+                <div class="trip-card-pill">
+                  <span>🌴</span>
+                  <span>Chill by the sea</span>
+                </div>
+                <div class="trip-card-name">Lisbon Slow Weekend</div>
+                <div class="trip-card-meta">3 days • Solo or duo • Sea, cafés, rooftops</div>
+              </div>
+              <div class="trip-card-footer">
+                <div class="trip-card-distance">
+                  <span>From you</span>
+                  <strong>2h 45m ✈︎</strong>
+                </div>
+                <div class="trip-card-cta">➜</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="trip-card" data-trip="Desert adventure loop">
+            <div
+              class="trip-card-image"
+              style="background-image:url('https://images.pexels.com/photos/248797/pexels-photo-248797.jpeg?auto=compress&cs=tinysrgb&w=1200');"
+            ></div>
+            <div class="trip-card-body">
+              <div>
+                <div class="trip-card-pill">
+                  <span>⛰️</span>
+                  <span>Adventure mode</span>
+                </div>
+                <div class="trip-card-name">Jordan Desert Loop</div>
+                <div class="trip-card-meta">6 days • Small group • Hikes, stars, canyons</div>
+              </div>
+              <div class="trip-card-footer">
+                <div class="trip-card-distance">
+                  <span>Season</span>
+                  <strong>Best: Oct–Apr</strong>
+                </div>
+                <div class="trip-card-cta">➜</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="trip-card" data-trip="Night-city microbreak">
+            <div
+              class="trip-card-image"
+              style="background-image:url('https://images.pexels.com/photos/315191/pexels-photo-315191.jpeg?auto=compress&cs=tinysrgb&w=1200');"
+            ></div>
+            <div class="trip-card-body">
+              <div>
+                <div class="trip-card-pill">
+                  <span>🌃</span>
+                  <span>City night lights</span>
+                </div>
+                <div class="trip-card-name">Tokyo 48h Microbreak</div>
+                <div class="trip-card-meta">2 days • Solo • Neon, ramen, arcades</div>
+              </div>
+              <div class="trip-card-footer">
+                <div class="trip-card-distance">
+                  <span>Budget</span>
+                  <strong>From $420</strong>
+                </div>
+                <div class="trip-card-cta">➜</div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Planner Screen -->
+      <section class="screen" id="screen-planner">
+        <div class="planner-hero">
+          <div class="planner-hero-title">Where to, traveler?</div>
+          <div class="planner-hero-body">
+            Tell the AI how you travel. It will shape a trip around your energy, not just your dates.
+          </div>
+          <div class="planner-ai-badge">
+            <span>⚡</span>
+            AI Trip Planner · Smart, fast, personal
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-label">Trip prompt</div>
+          <textarea
+            id="tripPrompt"
+            class="prompt-input"
+            placeholder="Example: 5 days in Japan in May, solo traveler, loves quiet coffee shops, photo-friendly streets and nature escapes."
+          ></textarea>
+
+          <div class="prompt-hints">
+            <button class="hint-chip" data-hint="Long weekend, somewhere warm, max 3h flight, good food, cowork-friendly cafés.">
+              Long-weekend reset
+            </button>
+            <button class="hint-chip" data-hint="One week, early summer, hiking + lakes, somewhere not too crowded, budget mid-range.">
+              Calm nature week
+            </button>
+            <button class="hint-chip" data-hint="City microbreak, 2 nights, neon lights, late-night food, safe for solo female.">
+              Neon city sprint
+            </button>
+          </div>
+
+          <button class="generate-btn" id="generateTripBtn">
+            <span class="icon">✨</span>
+            <span>Generate my trip</span>
+          </button>
+        </div>
+
+        <div class="ai-results-list" id="aiResults"></div>
+      </section>
+
+      <!-- Live Trip Screen -->
+      <section class="screen" id="screen-live">
+        <div class="live-trip-hero">
+          <div class="live-trip-overlay"></div>
+
+          <div class="live-trip-top">
+            <div class="pill-label">
+              <span>👣</span>
+              <span>Your travel buddy</span>
+            </div>
+            <div class="icon-btn" style="width:32px;height:32px;font-size:15px;">⋯</div>
+          </div>
+
+          <div class="live-trip-gauge">
+            <div class="gauge-dial">
+              <div class="gauge-dot" id="gaugeDot"></div>
+            </div>
+            <div class="gauge-metrics">
+              Distance today
+              <span class="value" id="liveDistance">543 m</span>
+              <span style="font-size:11px;">Travel time · <span id="liveTime">10 min</span></span>
+            </div>
+          </div>
+
+          <div class="live-trip-path">
+            <div class="path-marker"></div>
+            <div class="path-marker"></div>
+            <div class="path-marker"></div>
+            <div class="path-marker"></div>
+            <div class="path-marker"></div>
+          </div>
+        </div>
+
+        <div class="live-trip-details">
+          <div class="detail-row">
+            <div>
+              <div class="detail-main">Forest trail to Kiyomizu lookout</div>
+              <div class="detail-sub">
+                Stay on the marked path · Your route avoids crowded streets and keeps you in the shade.
+              </div>
+            </div>
+            <div class="safety-pill">
+              <span>🛡</span>
+              Safe · Low risk
+            </div>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div>
+                <strong>Now · Quiet path</strong>
+                This route has low foot traffic but good visibility. Perfect for solo walks and photos.
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div>
+                <strong>Next · Café stop</strong>
+                AI suggests &ldquo;Green Gate Café&rdquo; ahead · Safe area · Great for charging, Wi-Fi and snacks.
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div>
+                <strong>Heads up · Evening</strong>
+                Path lighting is moderate after 8pm. The app will reroute you to brighter streets automatically.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="app-nav">
+      <div class="nav-inner">
+        <button class="nav-item active" data-screen-target="home">
+          <span class="nav-item-icon">🏠</span>
+          <span class="nav-item-label">Home</span>
+        </button>
+        <button class="nav-item" data-screen-target="planner">
+          <span class="nav-item-icon">📝</span>
+          <span class="nav-item-label">Plan</span>
+        </button>
+        <button class="nav-item" data-screen-target="live">
+          <span class="nav-item-icon">🧭</span>
+          <span class="nav-item-label">Live</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    (function () {
+      const screens = {
+        home: document.getElementById("screen-home"),
+        planner: document.getElementById("screen-planner"),
+        live: document.getElementById("screen-live"),
+      };
+
+      const navItems = document.querySelectorAll(".nav-item");
+      const headerTitle = document.getElementById("headerTitle");
+      const headerEyebrow = document.getElementById("headerEyebrow");
+      const toast = document.getElementById("toast");
+      const toastText = document.getElementById("toastText");
+
+      const titles = {
+        home: { title: "Smart Journeys", eyebrow: "Hi, Max" },
+        planner: { title: "AI Trip Planner", eyebrow: "Where to next?" },
+        live: { title: "Your Travel Buddy", eyebrow: "Live guidance" },
+      };
+
+      function setActiveScreen(screenKey) {
+        Object.keys(screens).forEach((key) => {
+          screens[key].classList.toggle("active", key === screenKey);
+        });
+
+        navItems.forEach((item) => {
+          item.classList.toggle("active", item.dataset.screenTarget === screenKey);
+        });
+
+        headerTitle.textContent = titles[screenKey].title;
+        headerEyebrow.textContent = titles[screenKey].eyebrow;
+      }
+
+      navItems.forEach((item) => {
+        item.addEventListener("click", () => {
+          const target = item.dataset.screenTarget;
+          if (!target) return;
+          setActiveScreen(target);
+        });
+      });
+
+      /* Simple toast helper */
+      let toastTimeout;
+      function showToast(message) {
+        toastText.textContent = message;
+        toast.classList.add("visible");
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+          toast.classList.remove("visible");
+        }, 2300);
+      }
+
+      /* Home actions */
+      document.getElementById("chipAskAI").addEventListener("click", () => {
+        setActiveScreen("planner");
+        document.getElementById("tripPrompt").focus();
+      });
+
+      document.getElementById("chipExplore").addEventListener("click", () => {
+        showToast("Exploring curated trips for you…");
+      });
+
+      document.getElementById("seeAllTrips").addEventListener("click", () => {
+        showToast("This is a demo · imagine a full catalog here.");
+      });
+
+      document.querySelectorAll(".trip-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const label = card.dataset.trip || "trip";
+          showToast(`Added “${label}” to your plans`);
+        });
+      });
+
+      /* Planner actions */
+
+      const tripPrompt = document.getElementById("tripPrompt");
+      const aiResults = document.getElementById("aiResults");
+      const generateBtn = document.getElementById("generateTripBtn");
+
+      document.querySelectorAll(".hint-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const hint = chip.dataset.hint;
+          if (!hint) return;
+          tripPrompt.value = hint;
+          tripPrompt.focus();
+        });
+      });
+
+      const cannedSuggestions = [
+        {
+          title: "Kyoto Slow-Path Escape",
+          meta: "4 days · temples, cafés, forest walks",
+          tags: ["Solo friendly", "Photo spots", "Low noise", "Train-based"],
+        },
+        {
+          title: "Lisbon Work & Wander",
+          meta: "5 days · mornings cowork, sunsets by the sea",
+          tags: ["Cowork cafés", "Ocean views", "Budget mid-range"],
+        },
+        {
+          title: "Neon Nights in Seoul",
+          meta: "3 days · street food, late-night safety routes",
+          tags: ["Solo female", "Good lighting", "Subway navigation"],
+        },
+      ];
+
+      function generateResultFromPrompt(promptText) {
+        const idx = Math.floor(Math.random() * cannedSuggestions.length);
+        const base = cannedSuggestions[idx];
+        return {
+          ...base,
+          meta:
+            base.meta +
+            (promptText && promptText.length > 40
+              ? " · tailored to your vibe"
+              : ""),
+        };
+      }
+
+      generateBtn.addEventListener("click", () => {
+        const text = tripPrompt.value.trim();
+        const result = generateResultFromPrompt(text);
+
+        const card = document.createElement("article");
+        card.className = "ai-result-card";
+        card.innerHTML = `
+          <div class="ai-result-badge">✨</div>
+          <div>
+            <div class="ai-result-title">${result.title}</div>
+            <div class="ai-result-meta">${result.meta}</div>
+            <div class="ai-result-tags">
+              ${result.tags
+                .map((t) => `<span class="ai-result-tag">${t}</span>`)
+                .join("")}
+            </div>
+          </div>
+        `;
+        aiResults.prepend(card);
+
+        showToast("AI crafted a new trip for you");
+      });
+
+      /* Header quick AI button = open planner */
+      document.getElementById("quickAIButton").addEventListener("click", () => {
+        setActiveScreen("planner");
+        tripPrompt.focus();
+      });
+
+      document.getElementById("notifBtn").addEventListener("click", () => {
+        showToast("No new alerts · you’re all clear.");
+      });
+
+      /* Live gauge small playful animation */
+
+      const gaugeDot = document.getElementById("gaugeDot");
+      let angle = 120;
+      setInterval(() => {
+        angle += (Math.random() - 0.5) * 10;
+        if (angle < 80) angle = 80;
+        if (angle > 160) angle = 160;
+        gaugeDot.style.transform = `rotate(${angle}deg) translateY(-32px)`;
+      }, 1700);
+    })();
+  </script>
+</body>
+</html>
